@@ -1,89 +1,160 @@
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
-using System;
+using static UnityEditor.PlayerSettings;
 
 [ExecuteInEditMode]
 public class GravityBakerTester : MonoBehaviour
 {
-
     public Transform target;
-
-    public Vector3Int cellDimension = Vector3Int.one;
-
     public BakedGravityData bakedData;
 
-    public bool showNeighboorsCells;
+    public bool showNeighboorsCells = true;
+    public bool showGridCells = true;
+    public bool showDataInCells = true;
+    private bool showAllGravityVectors = true;
 
-    public Color cellColor = new Color(1,1,1,.3f);
+    public Color cellDefaultColor = new Color(1, 1, 1, 0.3f);
+    public Color cellTargetColor = new Color(1, 0, 0, 0.8f);
+    public Color cellNeighborColor = new Color(0, 1, 0, 0.8f);
+    public float dataMultiplier = 1;
+    private float arrowHeadSize = .5f;
 
+    public Color targetVectorColor = Color.white;
+   
 
-    private void OnEnable()
+    [ContextMenu("Randomize Data")]
+    public void AddRandomVectorDataToCells()
     {
-        bakedData.CreateCellsAndSetData(cellDimension);
+        bakedData.RandomizeData();
     }
 
 
-    void OnDrawGizmos()
-    {    
-        // Draw the whole cell grid
-        for (int y = 0; y < cellDimension.y; y++)
+    [ContextMenu("Bake Gravity From Sources")]
+    public void BakeGravityFromSources()
+    {
+        if (bakedData != null)
         {
-            for (int z = 0; z < cellDimension.z; z++)
-            {
-                for (int x = 0; x < cellDimension.x; x++)
-                {
-                    Gizmos.color = cellColor;
-                    Vector3 pos = bakedData.CellToWorldPostion(x, y, z);
-                    Gizmos.DrawWireCube(pos, Vector3.one * bakedData.unitSize);                  
+            // Make sure we have the correct cell size
+            bakedData.CreateCellsAndSetData();
 
+            // Now bake from sources
+            bakedData.BakeGravityFromSources();
+
+            Debug.Log("Gravity baked from all sources in the scene");
+        }
+        else
+        {
+            Debug.LogError("BakedGravityData not assigned!");
+        }
+    }
+
+
+
+    #region Gizmos
+
+
+
+    void OnDrawGizmos()
+    {
+        if (bakedData == null) return;
+
+        // Draw the whole cell grid
+        for (int y = 0; y < bakedData.cellSize.y; y++)
+        {
+            for (int z = 0; z < bakedData.cellSize.z; z++)
+            {
+                for (int x = 0; x < bakedData.cellSize.x; x++)
+                {
+                    Gizmos.color = cellDefaultColor;
+                    Vector3 worldPosition = bakedData.CellToWorldPostion(x, y, z);
+                    Gizmos.DrawWireCube(worldPosition, Vector3.one * bakedData.unitSize);
+
+                    // Optionally visualize all gravity vectors
+                    if (showAllGravityVectors && bakedData.dictionaryVectorData.TryGetValue(new Vector3Int(x, y, z), out Vector3 gravityDir))
+                    {
+                        // Only draw non-zero vectors for clarity
+                        if (gravityDir.sqrMagnitude > 0.01f)
+                        {
+                            DrawArrow(worldPosition, gravityDir * dataMultiplier * 0.5f, Color.red);
+                        }
+                    }
+                    //if (bakedData.dictionaryVectorData.TryGetValue(new Vector3Int(x, y, z), out Vector3 gravityDir))
+                    //{
+                    //    // Only draw non-zero vectors for clarity
+                    //    if (gravityDir.sqrMagnitude > 0.01f)
+                    //    {
+                    //        // Visualize the stored vector in the editor with an arrow
+                    //        DrawArrow(neighborPos, gravityDir * dataMultiplier * 0.5f,
+                            
+                    //        Gizmos.color = new Color(1f, 0.7f, 0f, 0.5f); // Orange
+                    //        Gizmos.DrawLine(worldPosition, worldPosition + gravityDir * dataMultiplier * 0.5f);
+                    //    }
+                    //}
                 }
             }
         }
 
+        if (target == null) return;
 
-        // Get the cell position of the target and draw it
+        // Draw the target cell
         Vector3Int cellPosition = bakedData.WorldPositionToCellPosition(target.position);
 
-       // The cell position is the dictionary key
+        // The cell position is the dictionary key
         if (bakedData.dictionaryVectorData.TryGetValue(cellPosition, out Vector3 dictValue))
         {
-            // a world position from the key
-            Vector3 world = bakedData.CellToWorldPostion(cellPosition.x, cellPosition.y, cellPosition.z);
+            // Get world position from the key
+            Vector3 worldPosition = bakedData.CellToWorldPostion(cellPosition.x, cellPosition.y, cellPosition.z);
 
-            Gizmos.color = Color.red;
-            Gizmos.DrawSphere(world, .1f);//draws at center of target cube
-            
+            // Show Stored Data           
+            Gizmos.color = cellTargetColor;
+            Gizmos.DrawSphere(worldPosition, 0.1f); // Draws at center of target cube
+
             // Visualize the stored vector in the editor
-            Gizmos.color = Color.blue;
-            Gizmos.DrawLine(world, world + dictValue);
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawLine(worldPosition, worldPosition + dictValue * dataMultiplier);
 
-            // Draw the neighbooring cells offset from the target cell
+            // Visualize the stored vector in the editor with an arrow
+            DrawArrow(worldPosition, dictValue * dataMultiplier, targetVectorColor);
+
+            // Draw the neighboring cells offset from the target cell
             if (showNeighboorsCells)
             {
-                Vector3 up = bakedData.CellToWorldPostion(cellPosition.x, cellPosition.y + 1, cellPosition.z);
-                Vector3 down = bakedData.CellToWorldPostion(cellPosition.x, cellPosition.y - 1, cellPosition.z);
-                Vector3 back = bakedData.CellToWorldPostion(cellPosition.x, cellPosition.y, cellPosition.z - 1);
-                Vector3 forward = bakedData.CellToWorldPostion(cellPosition.x, cellPosition.y, cellPosition.z + 1);
-                Vector3 right = bakedData.CellToWorldPostion(cellPosition.x + 1, cellPosition.y, cellPosition.z);
-                Vector3 left = bakedData.CellToWorldPostion(cellPosition.x - 1, cellPosition.y, cellPosition.z);
-                
-                // TODO: Add validation method to stay inbouds.
-                
-                Gizmos.color = Color.green;
-                Gizmos.DrawWireCube(up, Vector3.one * bakedData.unitSize);
-                Gizmos.DrawWireCube(down, Vector3.one * bakedData.unitSize);
-                Gizmos.DrawWireCube(left, Vector3.one * bakedData.unitSize);
-                Gizmos.DrawWireCube(right, Vector3.one * bakedData.unitSize);
-                Gizmos.DrawWireCube(forward, Vector3.one * bakedData.unitSize);
-                Gizmos.DrawWireCube(back, Vector3.one * bakedData.unitSize);
+                DrawNeighbor(cellPosition.x, cellPosition.y + 1, cellPosition.z);
+                DrawNeighbor(cellPosition.x, cellPosition.y - 1, cellPosition.z);
+                DrawNeighbor(cellPosition.x, cellPosition.y, cellPosition.z - 1);
+                DrawNeighbor(cellPosition.x, cellPosition.y, cellPosition.z + 1);
+                DrawNeighbor(cellPosition.x + 1, cellPosition.y, cellPosition.z);
+                DrawNeighbor(cellPosition.x - 1, cellPosition.y, cellPosition.z);
             }
 
-            //Draws targets red cube cell last to draw on top
+            // Draws target's red cube cell last to draw on top
             Gizmos.color = Color.red;
-            Gizmos.DrawWireCube(world, Vector3.one * bakedData.unitSize);
-
-
-        }  
+            Gizmos.DrawWireCube(worldPosition, Vector3.one * bakedData.unitSize);
+        }
     }
+
+    private void DrawNeighbor(int x, int y, int z)
+    {
+        if (bakedData.IsValidCell(x, y, z))
+        {
+            Vector3 neighborPos = bakedData.CellToWorldPostion(x, y, z);
+            Gizmos.color = cellNeighborColor;
+            Gizmos.DrawWireCube(neighborPos, Vector3.one * bakedData.unitSize);
+        }
+    }
+
+    // Replace the DrawArrow method in GravityBakerTester with this:
+    private void DrawArrow(Vector3 start, Vector3 direction, Color color)
+    {
+        // Store original color and set new color
+        Color originalColor = Gizmos.color;
+        Gizmos.color = color;
+
+        // Draw the arrow
+        GizmoArrowUtility.DrawArrow(start, direction, arrowHeadSize * 2, 20.0f, 8);
+
+        // Restore original color
+        Gizmos.color = originalColor;
+    }
+
+    #endregion
 }
