@@ -8,24 +8,20 @@ public class GravityBakerTester : MonoBehaviour
 {
 
     public Transform target;
-   
+
     public Vector3Int cellDimension = Vector3Int.one;
 
     public BakedGravityData bakedData;
 
     public bool showNeighboorsCells;
 
-    public Color cellDefaultColor = new Color(1, 1 ,1, .3f);
-    public Color cellTargetColor = new Color(1, 0, 0, .3f);
-    public Color cellNeighborColor = new Color(0, 1, 0, .3f);
-    public float dataMultiplier = 1;
+    public Color cellColor = new Color(1,1,1,.3f);
 
-    [ContextMenu("Randomize Data")]
-    public void AddRandomVectorDataToCells()
+
+    private void OnEnable()
     {
         bakedData.CreateCellsAndSetData(cellDimension);
     }
-
 
 
     void OnDrawGizmos()
@@ -37,7 +33,7 @@ public class GravityBakerTester : MonoBehaviour
             {
                 for (int x = 0; x < cellDimension.x; x++)
                 {
-                    Gizmos.color = cellDefaultColor;
+                    Gizmos.color = cellColor;
                     Vector3 pos = bakedData.CellToWorldPostion(x, y, z);
                     Gizmos.DrawWireCube(pos, Vector3.one * bakedData.unitSize);                  
 
@@ -46,23 +42,21 @@ public class GravityBakerTester : MonoBehaviour
         }
 
 
-        // Draw the target cell
-        
+        // Get the cell position of the target and draw it
         Vector3Int cellPosition = bakedData.WorldPositionToCellPosition(target.position);
 
-        // The cell position is the dictionary key
+       // The cell position is the dictionary key
         if (bakedData.dictionaryVectorData.TryGetValue(cellPosition, out Vector3 dictValue))
         {
             // a world position from the key
-            Vector3 worldPosition = bakedData.CellToWorldPostion(cellPosition.x, cellPosition.y, cellPosition.z);
+            Vector3 world = bakedData.CellToWorldPostion(cellPosition.x, cellPosition.y, cellPosition.z);
 
-            //Show Stored Data           
-            Gizmos.color = cellTargetColor;
-            Gizmos.DrawSphere(worldPosition, .1f);//draws at center of target cube
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(world, .1f);//draws at center of target cube
             
             // Visualize the stored vector in the editor
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawLine(worldPosition, worldPosition + dictValue * dataMultiplier);
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(world, world + dictValue);
 
             // Draw the neighbooring cells offset from the target cell
             if (showNeighboorsCells)
@@ -76,7 +70,7 @@ public class GravityBakerTester : MonoBehaviour
                 
                 // TODO: Add validation method to stay inbouds.
                 
-                Gizmos.color = cellNeighborColor;
+                Gizmos.color = Color.green;
                 Gizmos.DrawWireCube(up, Vector3.one * bakedData.unitSize);
                 Gizmos.DrawWireCube(down, Vector3.one * bakedData.unitSize);
                 Gizmos.DrawWireCube(left, Vector3.one * bakedData.unitSize);
@@ -87,7 +81,7 @@ public class GravityBakerTester : MonoBehaviour
 
             //Draws targets red cube cell last to draw on top
             Gizmos.color = Color.red;
-            Gizmos.DrawWireCube(worldPosition, Vector3.one * bakedData.unitSize);
+            Gizmos.DrawWireCube(world, Vector3.one * bakedData.unitSize);
 
 
         }  
