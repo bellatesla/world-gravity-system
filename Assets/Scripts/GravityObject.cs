@@ -10,7 +10,10 @@ public class GravityObject : MonoBehaviour
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
-        rb.AddForce(initialForce, ForceMode.VelocityChange);
+        // Transform the initial force from local space to world space
+        Vector3 worldForce = rb.transform.TransformDirection(initialForce);
+        rb.AddForce(worldForce, ForceMode.VelocityChange);
+        //rb.AddForce(initialForce, ForceMode.VelocityChange);
 
     }
     private void FixedUpdate()

@@ -46,7 +46,6 @@ public class BakedGravityData : ScriptableObject
         InitializeRandomDictionary();
     }
 
-
     private void InitializeRandomDictionary()
     {
         _dictionaryVectorData = new SerializableDictionary<Vector3Int, Vector3>();
@@ -64,6 +63,77 @@ public class BakedGravityData : ScriptableObject
             }
         }
     }
+
+    /// <summary>
+    /// Gets gravity value from world position
+    /// </summary>
+    public Vector3 GetGravityAtPosition(Vector3 worldPosition)
+    {
+        Vector3Int cell = GetKey(worldPosition);
+
+        if (IsValidCell(cell) && dictionaryVectorData.TryGetValue(cell, out Vector3 gravityDir))
+        {
+            return gravityDir;
+        }
+
+        return Vector3.zero; // Default gravity if not found
+    }
+
+    /// <summary>
+    /// Converts from world position to key
+    /// </summary>
+    public Vector3Int GetKey(Vector3 worldPosition)
+    {
+        EnsureOffsetIsCalculated();
+
+        // Scale by unit size
+        worldPosition /= unitSize;
+
+        // Add offsets
+        worldPosition.x += offsets.x;
+        worldPosition.y += offsets.y;
+        worldPosition.z += offsets.z;
+
+        // Clamp domain to array size
+        int x = Mathf.Clamp(Mathf.RoundToInt(worldPosition.x), 0, cellSize.x - 1);
+        int y = Mathf.Clamp(Mathf.RoundToInt(worldPosition.y), 0, cellSize.y - 1);
+        int z = Mathf.Clamp(Mathf.RoundToInt(worldPosition.z), 0, cellSize.z - 1);
+
+        return new Vector3Int(x, y, z);
+    }
+
+    /// <summary>
+    /// Returns the world position from cell indices
+    /// </summary>
+    public Vector3 CellToWorldPostion(int x, int y, int z)
+    {
+        EnsureOffsetIsCalculated();
+
+        Vector3 position = new Vector3(x, y, z);
+
+        position.x -= offsets.x;
+        position.y -= offsets.y;
+        position.z -= offsets.z;
+
+        position *= unitSize;
+
+        return position;
+    }
+
+    public bool IsValidCell(Vector3Int cellPosition)
+    {
+        return dictionaryVectorData.ContainsKey(cellPosition) &&
+               cellPosition.x >= 0 && cellPosition.x < cellSize.x &&
+               cellPosition.y >= 0 && cellPosition.y < cellSize.y &&
+               cellPosition.z >= 0 && cellPosition.z < cellSize.z;
+    }
+
+    public bool IsValidCell(int x, int y, int z)
+    {
+        return IsValidCell(new Vector3Int(x, y, z));
+    }
+
+
 
 #if UNITY_EDITOR
     public void SaveScriptableObjectData()
@@ -145,70 +215,7 @@ public class BakedGravityData : ScriptableObject
         _offsetsCalculated = true;
     }
 
-    /// <summary>
-    /// Converts from world position to cell position
-    /// </summary>
-    public Vector3Int WorldPositionToCellPosition(Vector3 position)
-    {
-        EnsureOffsetIsCalculated();
+    
 
-        // Scale by unit size
-        position /= unitSize;
-
-        // Add offsets
-        position.x += offsets.x;
-        position.y += offsets.y;
-        position.z += offsets.z;
-
-        // Clamp domain to array size
-        int x = Mathf.Clamp(Mathf.RoundToInt(position.x), 0, cellSize.x - 1);
-        int y = Mathf.Clamp(Mathf.RoundToInt(position.y), 0, cellSize.y - 1);
-        int z = Mathf.Clamp(Mathf.RoundToInt(position.z), 0, cellSize.z - 1);
-
-        return new Vector3Int(x, y, z);
-    }
-
-    /// <summary>
-    /// Returns the world position from cell indices
-    /// </summary>
-    public Vector3 CellToWorldPostion(int x, int y, int z)
-    {
-        EnsureOffsetIsCalculated();
-
-        Vector3 position = new Vector3(x, y, z);
-
-        position.x -= offsets.x;
-        position.y -= offsets.y;
-        position.z -= offsets.z;
-
-        position *= unitSize;
-
-        return position;
-    }
-
-    public bool IsValidCell(Vector3Int cellPosition)
-    {
-        return dictionaryVectorData.ContainsKey(cellPosition) &&
-               cellPosition.x >= 0 && cellPosition.x < cellSize.x &&
-               cellPosition.y >= 0 && cellPosition.y < cellSize.y &&
-               cellPosition.z >= 0 && cellPosition.z < cellSize.z;
-    }
-
-    public bool IsValidCell(int x, int y, int z)
-    {
-        return IsValidCell(new Vector3Int(x, y, z));
-    }
-
-    // Get gravity direction at a world position (for use by objects affected by gravity)
-    public Vector3 GetGravityAtPosition(Vector3 worldPosition)
-    {
-        Vector3Int cell = WorldPositionToCellPosition(worldPosition);
-
-        if (IsValidCell(cell) && dictionaryVectorData.TryGetValue(cell, out Vector3 gravityDir))
-        {
-            return gravityDir;
-        }
-
-        return Vector3.zero; // Default gravity if not found
-    }
+   
 }
