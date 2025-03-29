@@ -1,27 +1,26 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEditor;
 
 [CreateAssetMenu(menuName = "Gravity Data")]
 public class BakedGravityData : ScriptableObject
 {
     // Dictionary for storing vector data
     [SerializeField]
-
-    private Dictionary<Vector3Int, Vector3> _dictionaryVectorData;
+    private SerializableDictionary<Vector3Int, Vector3> _dictionaryVectorData = new SerializableDictionary<Vector3Int, Vector3>();
 
     public Dictionary<Vector3Int, Vector3> dictionaryVectorData
     {
         get
         {
             if (_dictionaryVectorData == null)
-                _dictionaryVectorData = new Dictionary<Vector3Int, Vector3>();
+                _dictionaryVectorData = new SerializableDictionary<Vector3Int, Vector3>();
             return _dictionaryVectorData;
         }
     }
 
     // The size of the cell array in 3D
     public Vector3Int cellSize;
-
 
     // World unit size = 1 meter
     public int unitSize = 1;
@@ -36,9 +35,9 @@ public class BakedGravityData : ScriptableObject
 
 
     public void CreateCellsAndSetData()
-    {        
+    {
         _offsetsCalculated = false; // Reset offset flag
-        InitializeEmptyDictionary();       
+        InitializeEmptyDictionary();
     }
 
 
@@ -50,7 +49,7 @@ public class BakedGravityData : ScriptableObject
 
     private void InitializeRandomDictionary()
     {
-        _dictionaryVectorData = new Dictionary<Vector3Int, Vector3>();
+        _dictionaryVectorData = new SerializableDictionary<Vector3Int, Vector3>();
 
         for (int y = 0; y < cellSize.y; y++)
         {
@@ -64,12 +63,25 @@ public class BakedGravityData : ScriptableObject
                 }
             }
         }
+
+        SaveScriptableObjectData();
+
     }
+
+#if UNITY_EDITOR
+    public void SaveScriptableObjectData()
+    {
+        EditorUtility.SetDirty(this); // Marks the ScriptableObject as modified
+        AssetDatabase.SaveAssets();   // Writes all unsaved changes to disk
+        Debug.Log("Saved gravity data!");
+    }
+#endif
+
 
     // Initialize dictionary with zero vectors
     private void InitializeEmptyDictionary()
     {
-        _dictionaryVectorData = new Dictionary<Vector3Int, Vector3>();
+        _dictionaryVectorData = new SerializableDictionary<Vector3Int, Vector3>();
 
         for (int y = 0; y < cellSize.y; y++)
         {
@@ -110,7 +122,7 @@ public class BakedGravityData : ScriptableObject
             }
 
             // Store the result (normalized for consistency)
-            _dictionaryVectorData[cell] = totalGravity.normalized;
+            _dictionaryVectorData[cell] = totalGravity;
         }
     }
 

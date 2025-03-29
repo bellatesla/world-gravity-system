@@ -1,4 +1,6 @@
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 using static UnityEditor.PlayerSettings;
 
 [ExecuteInEditMode]
@@ -74,7 +76,8 @@ public class GravityBakerTester : MonoBehaviour
                         // Only draw non-zero vectors for clarity
                         if (gravityDir.sqrMagnitude > 0.01f)
                         {
-                            DrawArrow(worldPosition, gravityDir * dataMultiplier * 0.5f, Color.red);
+                            DrawArrow(worldPosition, gravityDir * dataMultiplier, Color.red);
+                            Handles.Label(worldPosition, gravityDir.magnitude.ToString("f02"));
                         }
                     }
                     //if (bakedData.dictionaryVectorData.TryGetValue(new Vector3Int(x, y, z), out Vector3 gravityDir))
