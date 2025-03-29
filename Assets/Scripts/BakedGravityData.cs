@@ -63,9 +63,6 @@ public class BakedGravityData : ScriptableObject
                 }
             }
         }
-
-        SaveScriptableObjectData();
-
     }
 
 #if UNITY_EDITOR
@@ -121,9 +118,12 @@ public class BakedGravityData : ScriptableObject
                 totalGravity += source.CalculateGravityContribution(worldPos);
             }
 
-            // Store the result (normalized for consistency)
+            // Store the result
             _dictionaryVectorData[cell] = totalGravity;
+
         }
+
+        SaveScriptableObjectData();
     }
 
     /// <summary>

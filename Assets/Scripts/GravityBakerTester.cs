@@ -9,6 +9,7 @@ public class GravityBakerTester : MonoBehaviour
     public Transform target;
     public BakedGravityData bakedData;
 
+    public bool showGizmos = false;
     public bool showNeighboorsCells = true;
     public bool showGridCells = true;
     public bool showDataInCells = true;
@@ -58,6 +59,7 @@ public class GravityBakerTester : MonoBehaviour
     void OnDrawGizmos()
     {
         if (bakedData == null) return;
+        if (!showGizmos) return;
 
         // Draw the whole cell grid
         for (int y = 0; y < bakedData.cellSize.y; y++)
@@ -71,7 +73,8 @@ public class GravityBakerTester : MonoBehaviour
                     Gizmos.DrawWireCube(worldPosition, Vector3.one * bakedData.unitSize);
 
                     // Optionally visualize all gravity vectors
-                    if (showAllGravityVectors && bakedData.dictionaryVectorData.TryGetValue(new Vector3Int(x, y, z), out Vector3 gravityDir))
+                    var key = new Vector3Int(x,y,z);
+                    if (showAllGravityVectors && bakedData.dictionaryVectorData.TryGetValue(key, out Vector3 gravityDir))
                     {
                         // Only draw non-zero vectors for clarity
                         if (gravityDir.sqrMagnitude > 0.01f)
