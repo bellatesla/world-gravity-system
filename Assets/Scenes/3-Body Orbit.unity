@@ -5624,13 +5624,12 @@ MonoBehaviour:
   showGizmos: 1
   showNeighboorsCells: 0
   showMagnitudes: 0
-  showGridCells: 0
+  showGridCells: 1
   showGravityVectors: 1
   cellDefaultColor: {r: 1, g: 1, b: 1, a: 0.003921569}
   cellTargetColor: {r: 1, g: 0, b: 0, a: 0.8}
   cellNeighborColor: {r: 0, g: 1, b: 0, a: 0.8}
   dataMultiplier: 1
-  targetVectorColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!4 &1344572226
 Transform:
   m_ObjectHideFlags: 0
